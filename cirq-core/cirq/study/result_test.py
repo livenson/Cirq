@@ -40,6 +40,54 @@ def test_from_single_parameter_set_deprecation():
         _ = cirq.Result.from_single_parameter_set(params=cirq.ParamResolver({}), measurements={})
 
 
+def test_construct_from_measurements():
+    r = cirq.Result(
+        params=None,
+        measurements={
+            'a': np.array([[0, 0], [1, 1]]),
+            'b': np.array([[0, 0, 0], [1, 1, 1]]),
+        },
+    )
+    assert np.all(r.measurements['a'] == np.array([[0, 0], [1, 1]]))
+    assert np.all(r.measurements['b'] == np.array([[0, 0, 0], [1, 1, 1]]))
+    assert np.all(r.measurements2['a'] == np.array([[[0, 0]], [[1, 1]]]))
+    assert np.all(r.measurements2['b'] == np.array([[[0, 0, 0]], [[1, 1, 1]]]))
+
+
+def test_construct_from_repeated_measurements():
+    r = cirq.Result(
+        params=None,
+        measurements2={
+            'a': np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]]),
+            'b': np.array([[[0, 0, 0]], [[1, 1, 1]]]),
+        },
+    )
+    with pytest.raises(ValueError):
+        _ = r.measurements
+    assert np.all(r.measurements2['a'] == np.array([[[0, 0], [0, 1]], [[1, 0], [1, 1]]]))
+    assert np.all(r.measurements2['b'] == np.array([[[0, 0, 0]], [[1, 1, 1]]]))
+    assert r.repetitions == 2
+
+    r2 = cirq.Result(
+        params=None,
+        measurements2={
+            'a': np.array([[[0, 0]], [[1, 1]]]),
+            'b': np.array([[[0, 0, 0]], [[1, 1, 1]]]),
+        },
+    )
+    assert np.all(r2.measurements['a'] == np.array([[0, 0], [1, 1]]))
+    assert np.all(r2.measurements['b'] == np.array([[0, 0, 0], [1, 1, 1]]))
+    assert np.all(r2.measurements2['a'] == np.array([[[0, 0]], [[1, 1]]]))
+    assert np.all(r2.measurements2['b'] == np.array([[[0, 0, 0]], [[1, 1, 1]]]))
+    assert r2.repetitions == 2
+
+
+def test_empty_measurements():
+    assert cirq.Result(params=None).repetitions == 0
+    assert cirq.Result(params=None, measurements={}).repetitions == 0
+    assert cirq.Result(params=None, measurements2={}).repetitions == 0
+
+
 def test_str():
     result = cirq.Result(
         params=cirq.ParamResolver({}),
